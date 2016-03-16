@@ -42,13 +42,13 @@ $principalBackend = new Principal(
 	'principals/'
 );
 $db = \OC::$server->getDatabaseConnection();
-$cardDavBackend = new CardDavBackend($db, $principalBackend);
+$app = new \OCA\Dav\AppInfo\Application();
 
 // Root nodes
 $principalCollection = new \Sabre\CalDAV\Principal\Collection($principalBackend);
 $principalCollection->disableListing = true; // Disable listing
 
-$addressBookRoot = new AddressBookRoot($principalBackend, $cardDavBackend);
+$addressBookRoot = new AddressBookRoot($principalBackend, $app->getCardDavBackend());
 $addressBookRoot->disableListing = true; // Disable listing
 
 $nodes = array(

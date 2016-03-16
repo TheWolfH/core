@@ -27,6 +27,7 @@ use OCA\DAV\CardDAV\CardDavBackend;
 use OCA\DAV\CardDAV\ContactsManager;
 use OCA\DAV\CardDAV\SyncJob;
 use OCA\DAV\CardDAV\SyncService;
+use OCA\DAV\DAV\GroupPrincipalBackend;
 use OCA\DAV\HookManager;
 use OCA\Dav\Migration\AddressBookAdapter;
 use OCA\Dav\Migration\CalendarAdapter;
@@ -83,7 +84,8 @@ class Application extends App {
 				$c->getServer()->getUserManager(),
 				$c->getServer()->getGroupManager()
 			);
-			return new CardDavBackend($db, $principal, $dispatcher);
+			$groupPrincipal = new GroupPrincipalBackend($c->getServer()->getGroupManager());
+			return new CardDavBackend($db, $principal, $groupPrincipal, $dispatcher);
 		});
 
 		$container->registerService('CalDavBackend', function($c) {
@@ -93,7 +95,8 @@ class Application extends App {
 				$c->getServer()->getUserManager(),
 				$c->getServer()->getGroupManager()
 			);
-			return new CalDavBackend($db, $principal);
+			$groupPrincipal = new GroupPrincipalBackend($c->getServer()->getGroupManager());
+			return new CalDavBackend($db, $principal, $groupPrincipal);
 		});
 
 		$container->registerService('MigrateAddressbooks', function($c) {
@@ -209,5 +212,12 @@ class Application extends App {
 		} catch (\Exception $ex) {
 			$this->getContainer()->getServer()->getLogger()->logException($ex);
 		}
+	}
+
+	/**
+	 * @return CardDavBackend
+	 */
+	public function getCardDavBackend() {
+		return $this->getContainer()->query('CardDavBackend');
 	}
 }

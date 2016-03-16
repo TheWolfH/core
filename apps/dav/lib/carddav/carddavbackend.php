@@ -25,6 +25,7 @@
 namespace OCA\DAV\CardDAV;
 
 use OCA\DAV\Connector\Sabre\Principal;
+use OCA\DAV\DAV\GroupPrincipalBackend;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCA\DAV\DAV\Sharing\Backend;
 use OCA\DAV\DAV\Sharing\IShareable;
@@ -77,12 +78,13 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 * @param EventDispatcherInterface $dispatcher
 	 */
 	public function __construct(IDBConnection $db,
-								Principal $principalBackend,
+								Principal $userPrincipalBackend,
+								GroupPrincipalBackend $groupPrincipalBackend,
 								EventDispatcherInterface $dispatcher = null) {
 		$this->db = $db;
-		$this->principalBackend = $principalBackend;
+		$this->principalBackend = $userPrincipalBackend;
 		$this->dispatcher = $dispatcher;
-		$this->sharingBackend = new Backend($this->db, $principalBackend, 'addressbook');
+		$this->sharingBackend = new Backend($this->db, $userPrincipalBackend, $groupPrincipalBackend, 'addressbook');
 	}
 
 	/**
@@ -870,10 +872,12 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 *   * readOnly - boolean
 	 *   * summary - Optional, a description for the share
 	 *
+	 * @param $addressBookId
+	 * @param string $currentPrincipal
 	 * @return array
 	 */
-	public function getShares($addressBookId) {
-		return $this->sharingBackend->getShares($addressBookId);
+	public function getShares($addressBookId, $currentPrincipal) {
+		return $this->sharingBackend->getShares($addressBookId, $currentPrincipal);
 	}
 
 	/**
@@ -971,10 +975,11 @@ class CardDavBackend implements BackendInterface, SyncSupport {
 	 * For shared address books the sharee is set in the ACL of the address book
 	 * @param $addressBookId
 	 * @param $acl
+	 * @param string $currentPrincipal
 	 * @return array
 	 */
-	public function applyShareAcl($addressBookId, $acl) {
-		return $this->sharingBackend->applyShareAcl($addressBookId, $acl);
+	public function applyShareAcl($addressBookId, $acl, $currentPrincipal) {
+		return $this->sharingBackend->applyShareAcl($addressBookId, $acl, $currentPrincipal);
 	}
 
 	private function convertPrincipal($principalUri, $toV2) {
