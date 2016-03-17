@@ -70,30 +70,37 @@ class AddressBook extends \Sabre\CardDAV\AddressBook implements IShareable {
 	}
 
 	function getACL() {
-		$acl = parent::getACL();
+		$acl =  [
+			[
+				'privilege' => '{DAV:}read',
+				'principal' => $this->getOwner(),
+				'protected' => true,
+			]];
+		$acl[] = [
+				'privilege' => '{DAV:}write',
+				'principal' => $this->getOwner(),
+				'protected' => true,
+			];
+		if ($this->getOwner() !== parent::getOwner()) {
+			$acl[] =  [
+					'privilege' => '{DAV:}read',
+					'principal' => parent::getOwner(),
+					'protected' => true,
+				];
+			if ($this->canWrite()) {
+				$acl[] = [
+					'privilege' => '{DAV:}write',
+					'principal' => parent::getOwner(),
+					'protected' => true,
+				];
+			}
+		}
 		if ($this->getOwner() === 'principals/system/system') {
 			$acl[] = [
 					'privilege' => '{DAV:}read',
 					'principal' => '{DAV:}authenticated',
 					'protected' => true,
 			];
-		}
-
-		// add the current user
-		if (isset($this->addressBookInfo['{http://owncloud.org/ns}owner-principal'])) {
-			$owner = $this->addressBookInfo['{http://owncloud.org/ns}owner-principal'];
-			$acl[] = [
-					'privilege' => '{DAV:}read',
-					'principal' => $owner,
-					'protected' => true,
-				];
-			if ($this->addressBookInfo['{http://owncloud.org/ns}read-only']) {
-				$acl[] = [
-					'privilege' => '{DAV:}write',
-					'principal' => $owner,
-					'protected' => true,
-				];
-			}
 		}
 
 		/** @var CardDavBackend $carddavBackend */
@@ -102,26 +109,7 @@ class AddressBook extends \Sabre\CardDAV\AddressBook implements IShareable {
 	}
 
 	function getChildACL() {
-		$acl = parent::getChildACL();
-		if ($this->getOwner() === 'principals/system/system') {
-			$acl[] = [
-					'privilege' => '{DAV:}read',
-					'principal' => '{DAV:}authenticated',
-					'protected' => true,
-			];
-		}
-
-		/** @var CardDavBackend $carddavBackend */
-		$carddavBackend = $this->carddavBackend;
-		return $carddavBackend->applyShareAcl($this->getResourceId(), $acl);
-	}
-
-	function getChild($name) {
-		$obj = $this->carddavBackend->getCard($this->getResourceId(), $name);
-		if (!$obj) {
-			throw new NotFound('Card not found');
-		}
-		return new Card($this->carddavBackend, $this->addressBookInfo, $obj);
+		return $this->getACL();
 	}
 
 	/**
@@ -171,5 +159,12 @@ class AddressBook extends \Sabre\CardDAV\AddressBook implements IShareable {
 		$cardDavBackend = $this->carddavBackend;
 
 		return $cardDavBackend->collectCardProperties($this->getResourceId(), 'CATEGORIES');
+	}
+
+	private function canWrite() {
+		if (isset($this->addressBookInfo['{http://owncloud.org/ns}read-only'])) {
+			return !$this->addressBookInfo['{http://owncloud.org/ns}read-only'];
+		}
+		return true;
 	}
 }
