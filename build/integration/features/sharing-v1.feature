@@ -566,3 +566,14 @@ Feature: sharing
       | path | welcome.txt |
       | shareType | 3      |
     Then share ids should match
+
+  Scenario: Do not allow group sharing when group sharing is disabled
+    Given user "user0" exists
+    And group "group0" exists
+    And parameter "shareapi_allow_group_sharing" of app "core" is set to "no"
+    When As an "user0"
+    And creating a share with
+      | path      | welcome.txt |
+      | shareType | 1           |
+      | shareWith | group0      |
+    Then the OCS status code should be "404"

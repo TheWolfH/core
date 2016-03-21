@@ -9,6 +9,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 trait Sharing {
 	use Provisioning;
+	use AppConfiguration;
 
 	/** @var int */
 	private $sharingApiVersion = 1;
@@ -468,6 +469,10 @@ trait Sharing {
 		if ($this->savedShareId !== $this->lastShareData['data']['id']) {
 			throw new \Exception('Expected the same link share to be returned');
 		}
+	}
+
+	protected function resetAppConfigs() {
+		$this->modifyServerConfig('core', 'shareapi_allow_group_sharing', 'yes');
 	}
 }
 
